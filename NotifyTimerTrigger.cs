@@ -58,8 +58,14 @@ namespace MyTeamsApp2
             // Below runs it every 30 seconds (for development)
             // [TimerTrigger("*/30 * * * * *")]
 
-            // TurnContext turnContext = new TurnContext(_conversation.Adapter, new Microsoft.Bot.Schema.Activity());
-            // TeamDetails TeamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, turnContext.Activity.TeamsGetTeamInfo().Id, cancellationToken);
+            // Make the parameter string dynamic, and see if you can get a command from a user on new scheduling time
+            // Then check with the API if that user is admin for team
+            // If they are, perhaps show an adaptive card where they can enter the new time
+            // Stop this task, and start it again with new string
+
+            // OR
+
+            // Enable receiving of HTTP trigger for changing time. Then send this from front-end app
 
             // Make REST GET request
             Quote quote = await GetQuoteAsync("https://api.quotable.io/random");
