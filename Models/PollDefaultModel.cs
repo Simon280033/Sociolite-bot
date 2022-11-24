@@ -14,7 +14,7 @@ namespace MyTeamsApp2.Models
 
                 for (int i = 0; i < AnswersList.Count; i++)
                 {
-                    answersAsString += "(" + (i + 1) + ")" + AnswersList[i] + "\n\r";
+                    answersAsString += "(" + (i + 1) + ") " + AnswersList[i] + "\n\r";
                 }
                 return answersAsString;
             }

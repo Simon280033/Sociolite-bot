@@ -5,7 +5,7 @@
   "body": [
     {
       "type": "TextBlock",
-      "text": "Results of last Sociolite Poll",
+      "text": "Sociolite Poll",
       "wrap": true,
       "weight": "Bolder",
       "size": "Medium"

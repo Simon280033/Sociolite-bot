@@ -94,7 +94,8 @@ namespace MyTeamsApp2
                             {
                                 PollTitle = "(1) " + quote.content,
                                 PollQuestion = quote.author,
-                                AnswersList = new List<string> { quote.author, quote.author, quote.author }
+                                AnswersList = new List<Tuple<int, string>> { new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(2, "test") },
+                                PossibleAnswersList = new List<string>() { "Hej", "Med", "Dig"}
                             }
                         );
                         await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);

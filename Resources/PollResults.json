@@ -19,24 +19,13 @@
     },
     {
       "type": "TextBlock",
-      "text": "Vote options:",
+      "text": "Votes:",
       "wrap": true
     },
     {
       "type": "TextBlock",
       "text": "${$root.answers}",
       "weight": "Bolder",
-      "wrap": true
-    },
-    {
-      "type": "TextBlock",
-      "text": "How do I vote?",
-      "wrap": true,
-      "color": "Accent"
-    },
-    {
-      "type": "TextBlock",
-      "text": "Message the bot with your answer like this: \"@Botname A\". Any answer will be for the latest poll.",
       "wrap": true
     }
   ]
