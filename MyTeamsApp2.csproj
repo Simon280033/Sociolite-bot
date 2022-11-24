@@ -40,6 +40,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Resources\DiscussionDefault.json" />
+    <None Remove="Resources\PollDefault.json" />
+    <None Remove="Resources\PollResults.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="context.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -1,0 +1,43 @@
+{
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Results of last Sociolite Poll",
+      "wrap": true,
+      "weight": "Bolder",
+      "size": "Medium"
+    },
+    {
+      "type": "TextBlock",
+      "text": "${$root.pollTitle}",
+      "wrap": true,
+      "weight": "Bolder",
+      "size": "ExtraLarge"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Vote options:",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "${$root.answers}",
+      "weight": "Bolder",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "How do I vote?",
+      "wrap": true,
+      "color": "Accent"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Message the bot with your answer like this: \"@Botname A\". Any answer will be for the latest poll.",
+      "wrap": true
+    }
+  ]
+}

@@ -13,6 +13,7 @@ using Microsoft.Bot.Schema.Teams;
 using Microsoft.Bot.Builder.Teams;
 using Microsoft.Bot.Builder;
 using Newtonsoft.Json.Linq;
+using static MyTeamsApp2.NotifyTimerTrigger;
 
 namespace MyTeamsApp2
 {
@@ -21,6 +22,7 @@ namespace MyTeamsApp2
         private readonly ConversationBot _conversation;
         private readonly ILogger<NotifyTimerTrigger> _log;
         private static HttpClient client = new HttpClient();
+        private RecurranceStringEvaluator recurranceStringEvaluator = new RecurranceStringEvaluator();
 
         public NotifyTimerTrigger(ConversationBot conversation, ILogger<NotifyTimerTrigger> log)
         {
@@ -50,50 +52,96 @@ namespace MyTeamsApp2
         }
 
         [FunctionName("NotifyTimerTrigger")]
-        public async Task Run([TimerTrigger("*/30 * * * * *")] TimerInfo myTimer, ExecutionContext context, CancellationToken cancellationToken)
+        public async Task Run([TimerTrigger("*/10 * * * * *")] TimerInfo myTimer, ExecutionContext context, CancellationToken cancellationToken)
         {
-            // Below runs the trigger every weekday at 12:15
-            // [TimerTrigger("0 15 12 * * 1-5")]
+            // Below runs the trigger every 30 minutes on every weekday - use this to check if the time is right for team
+            // [TimerTrigger("0 */30 * * * 0-6")]
 
             // Below runs it every 30 seconds (for development)
             // [TimerTrigger("*/30 * * * * *")]
 
-            // Make the parameter string dynamic, and see if you can get a command from a user on new scheduling time
-            // Then check with the API if that user is admin for team
-            // If they are, perhaps show an adaptive card where they can enter the new time
-            // Stop this task, and start it again with new string
+            // Make REST GET request for recurrance string for team
+            // We use this format: 00000000000 -> First 7 are bools, to say if it should run on this day, last is time
+            // Example: 10101001230 -> Runs every monday/wednesday/friday at 12:30
 
-            // OR
+            //string timeToRun = "10101001230"; // This will be fetched from API
+            string timeToRun = "always"; // For development purposes
 
-            // Enable receiving of HTTP trigger for changing time. Then send this from front-end app
+            bool lastActivityWasPoll = true; // This should be fetched from API
 
-            // Make REST GET request
-            Quote quote = await GetQuoteAsync("https://api.quotable.io/random");
+            bool isDiscussion = true; // This should be retrieved from the object received from API. If false, it is a poll
 
-            _log.LogInformation($"NotifyTimerTrigger is triggered at {DateTime.Now}.");
-
-            // Read adaptive card template
-            var adaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "NotificationDefault.json");
-            var cardTemplate = await File.ReadAllTextAsync(adaptiveCardFilePath, cancellationToken);
-
-            JObject o1 = JObject.Parse(File.ReadAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\test.json"));
-
-            var installations = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
-            foreach (var installation in installations)
+            // If it is time for the event to occur
+            if (recurranceStringEvaluator.RunNow(timeToRun))
             {
-                // Build and send adaptive card
-                var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
-                (
-                    new NotificationDefaultModel
+                Quote quote = await GetQuoteAsync("https://api.quotable.io/random");
+
+                _log.LogInformation($"NotifyTimerTrigger is triggered at {DateTime.Now}.");
+
+                // If the last activity was a poll, we post the results of this first
+                if (lastActivityWasPoll)
+                {
+                    var adaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollResults.json");
+                    var cardTemplate = await File.ReadAllTextAsync(adaptiveCardFilePath, cancellationToken);
+
+                    var installations = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
+                    foreach (var installation in installations)
                     {
-                        Title = quote.content,
-                        AppName = quote.author,
-                        Description = (string)o1.GetValue("teamsid")
-,
-                        NotificationUrl = "https://www.adaptivecards.io/",
+                        // Build and send adaptive card
+                        var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
+                        (
+                            new PollResultModel
+                            {
+                                PollTitle = "(1) " + quote.content,
+                                PollQuestion = quote.author,
+                                AnswersList = new List<string> { quote.author, quote.author, quote.author }
+                            }
+                        );
+                        await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
                     }
-                );
-                await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+                }
+
+                // If we want to display a poll
+                if (lastActivityWasPoll)
+                {
+                    var pollAdaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollDefault.json");
+                    var cardTemplate = await File.ReadAllTextAsync(pollAdaptiveCardFilePath, cancellationToken);
+
+                    var installations2 = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
+                    foreach (var installation in installations2)
+                    {
+                        // Build and send adaptive card
+                        var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
+                        (
+                            new PollDefaultModel
+                            {
+                                PollTitle = quote.content,
+                                PollQuestion = quote.author,
+                                AnswersList = new List<string> { quote.author, quote.author, quote.author }
+                            }
+                        );
+                        await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+                    }
+                } 
+                else // If it is a discussion
+                {
+                    var discussionAdaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "DiscussionDefault.json");
+                    var cardTemplate = await File.ReadAllTextAsync(discussionAdaptiveCardFilePath, cancellationToken);
+
+                    var installations = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
+                    foreach (var installation in installations)
+                    {
+                        // Build and send adaptive card
+                        var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
+                        (
+                            new DiscussionDefaultModel
+                            {
+                                DiscussionTopic = quote.content
+                            }
+                        );
+                        await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+                    }
+                }
             }
         }
     }
