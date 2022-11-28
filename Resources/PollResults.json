@@ -8,24 +8,38 @@
       "text": "Results of last Sociolite Poll",
       "wrap": true,
       "weight": "Bolder",
-      "size": "Medium"
+      "size": "ExtraLarge"
+    },
+    {
+      "type": "Image",
+      "url": "${$root.chartImage}",
+      "size": "Large",
+      "height": "200px",
+      "width": "40777px"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Question:",
+      "wrap": true,
+      "weight": "Bolder"
     },
     {
       "type": "TextBlock",
       "text": "${$root.pollTitle}",
       "wrap": true,
       "weight": "Bolder",
-      "size": "ExtraLarge"
+      "size": "Large"
     },
     {
       "type": "TextBlock",
-      "text": "Votes:",
-      "wrap": true
+      "text": "Options and the people who voted for them:",
+      "wrap": true,
+      "weight": "Bolder"
     },
     {
       "type": "TextBlock",
       "text": "${$root.answers}",
-      "weight": "Bolder",
+      "weight": "Default",
       "wrap": true
     }
   ]

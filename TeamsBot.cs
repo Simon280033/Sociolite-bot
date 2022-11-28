@@ -32,14 +32,16 @@ namespace MyTeamsApp2
             //File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\test.json", ("{ \"teamsid\":\"") + test + ("\" }"));
 
             // Unfortunately, this doesn't seem to work on button press for adaptive card
-            var val = turnContext.Activity.Value;
+            //var val = turnContext.Activity.Value;
 
+            if (turnContext.Activity.Text.Length  > 0) { 
             // Reply to message to bot when vote
             await EvaluateBotMessageAsync(turnContext);
 
-            File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\test.json", ("{ \"test\":\"") + Convert.ToString(turnContext.Activity.Text) + ("\" }"));
+                File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\test.json", ("{ \"test\":\"") + Convert.ToString(turnContext.Activity.Text) + ("\" }"));
+            }
 
-            TeamDetails teamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, turnContext.Activity.TeamsGetTeamInfo().Id, cancellationToken);
+            TeamDetails teamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, null, cancellationToken);
 
             File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json", ("{ \"teamId\":\"") + teamDetails.Id + ("\" }"));
 
@@ -60,11 +62,20 @@ namespace MyTeamsApp2
             // If last activity was NOT a poll, we reject (get from API)
             bool lastWasPoll = true;
 
+            bool setupMessage = false;
+
             string replyMessage = "Something went wrong :( try again please";
 
             int numberOfPossibleAnswers = 3; // Get from API
 
-            if (lastWasPoll)
+            if (messageText.ToLower().Contains("hello"))
+            {
+                replyMessage = "This team has succesfully been connected to Sociolite, with " + turnContext.Activity.Name + " as manager!";
+                setupMessage = true;
+                lastWasPoll = false;
+            }
+
+            if (lastWasPoll && !setupMessage)
             {
                 // We evaluate if the response makes sense
                 // First we check if it can be turned into an integer
@@ -84,7 +95,7 @@ namespace MyTeamsApp2
                     replyMessage = "Sorry, we could not understand your vote attempt :( Please just write the number of the answer you want to give, eg.: '1'";
                 }
             }
-            else
+            else if (!lastWasPoll && !setupMessage)
             {
                 replyMessage = "No votes can be cast at the moment, as the current activity is not a poll.";
             }
