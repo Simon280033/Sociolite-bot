@@ -15,6 +15,10 @@ using Microsoft.Bot.Builder;
 using Newtonsoft.Json.Linq;
 using static MyTeamsApp2.NotifyTimerTrigger;
 using Microsoft.Bot.Schema;
+using MyTeamsApp2.Data;
+using REST.Model.ExchangeClasses;
+using System.Collections.Generic;
+using Properties;
 
 namespace MyTeamsApp2
 {
@@ -41,17 +45,6 @@ namespace MyTeamsApp2
             public string[] tags { get; set; }
         }
 
-        static async Task<Quote> GetQuoteAsync(string path)
-        {
-            Quote quote = null;
-            HttpResponseMessage response = await client.GetAsync(path);
-            if (response.IsSuccessStatusCode)
-            {
-                quote = await response.Content.ReadAsAsync<Quote>();
-            }
-            return quote;
-        }
-
         [FunctionName("NotifyTimerTrigger")]
         public async Task Run([TimerTrigger("*/10 * * * * *")] TimerInfo myTimer, ExecutionContext context, CancellationToken cancellationToken)
         {
@@ -65,6 +58,20 @@ namespace MyTeamsApp2
             // We use this format: 00000000000 -> First 7 are bools, to say if it should run on this day, last is time
             // Example: 10101001230 -> Runs every monday/wednesday/friday at 12:30
 
+            ActivityRequestObject data = await DAO.Instance.TeamAndActivityByChannelId("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // MAKE THIS READ FROM CONTEXT.JSON
+
+            CustomPollProperty customPollProperty = null;
+            CustomDiscussionProperty customDiscussionProperty = null;
+
+            if (data.Type.Equals("poll"))
+            {
+                customPollProperty = JsonConvert.DeserializeObject<CustomPollProperty>(data.Content);
+            }
+            else
+            {
+                customDiscussionProperty = JsonConvert.DeserializeObject<CustomDiscussionProperty>(data.Content);
+            }
+
             //string timeToRun = "10101001230"; // This will be fetched from API
             string timeToRun = "always"; // For development purposes
 
@@ -73,9 +80,9 @@ namespace MyTeamsApp2
             bool isDiscussion = true; // This should be retrieved from the object received from API. If false, it is a poll
 
             // If it is time for the event to occur
-            if (recurranceStringEvaluator.RunNow(timeToRun))
+            if (recurranceStringEvaluator.RunNow(timeToRun) && !data.IsActive) // REMOVE ! FROM LAST PART
             {
-                Quote quote = await GetQuoteAsync("https://api.quotable.io/random");
+                Quote quote = await DAO.Instance.GetQuoteAsync("https://api.quotable.io/random");
 
                 _log.LogInformation($"NotifyTimerTrigger is triggered at {DateTime.Now}.");
 
@@ -104,7 +111,7 @@ namespace MyTeamsApp2
                 }
 
                 // If we want to display a poll
-                if (lastActivityWasPoll)
+                if (data.Type.Equals("poll"))
                 {
                     var pollAdaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollDefault.json");
                     var cardTemplate = await File.ReadAllTextAsync(pollAdaptiveCardFilePath, cancellationToken);
@@ -117,8 +124,8 @@ namespace MyTeamsApp2
                         (
                             new PollDefaultModel
                             {
-                                PollTitle = quote.content,
-                                PollQuestion = quote.author,
+                                PollTitle = customPollProperty.Question,
+                                PollQuestion = customPollProperty.Question,
                                 AnswersList = new List<string> { quote.author, quote.author, quote.author }
                             }
                         );
@@ -138,7 +145,7 @@ namespace MyTeamsApp2
                         (
                             new DiscussionDefaultModel
                             {
-                                DiscussionTopic = quote.content
+                                DiscussionTopic = customDiscussionProperty.TopicText
                             }
                         );
                         await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);

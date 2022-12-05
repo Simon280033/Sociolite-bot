@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Teams;
@@ -7,6 +8,8 @@ using Microsoft.Bot.Schema;
 using Microsoft.Bot.Schema.Teams;
 using Microsoft.Graph;
 using Microsoft.TeamsFx;
+using MyTeamsApp2.Data;
+using System;
 using System.Text;
 using System.Text.Json;
 using File = System.IO.File;
@@ -24,31 +27,21 @@ namespace MyTeamsApp2
 
         public static async Task<Task> SetTeamId(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            //var channelId = turnContext.Activity.TeamsGetTeamInfo().Id; // Get's the channel ID - might be useful later?
-
-            // CHANNEL ID is probably useful because we only want ONE bot per team - so we can check if a bot is added to a channel
-            // belonging to a team which already has a bot in another channel
-
-            //File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\test.json", ("{ \"teamsid\":\"") + test + ("\" }"));
-
-            // Unfortunately, this doesn't seem to work on button press for adaptive card
-            //var val = turnContext.Activity.Value;
-
             if (turnContext.Activity.Text.Length  > 0) { 
             // Reply to message to bot when vote
-            await EvaluateBotMessageAsync(turnContext);
-
-                File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\test.json", ("{ \"test\":\"") + Convert.ToString(turnContext.Activity.Text) + ("\" }"));
+            await EvaluateBotMessageAsync(turnContext, cancellationToken);
             }
 
+            /*
             TeamDetails teamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, null, cancellationToken);
 
             File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json", ("{ \"teamId\":\"") + teamDetails.Id + ("\" }"));
+            */
 
             return Task.CompletedTask;
         }
 
-        public static async Task EvaluateBotMessageAsync(ITurnContext turnContext)
+        public static async Task EvaluateBotMessageAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
             // Get the text of the message if a user sends a message to @bot
             var messageText = turnContext.Activity.Text;
@@ -70,7 +63,12 @@ namespace MyTeamsApp2
 
             if (messageText.ToLower().Contains("hello"))
             {
-                replyMessage = "This team has succesfully been connected to Sociolite, with " + turnContext.Activity.Name + " as manager!";
+                TeamDetails teamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, null, cancellationToken);
+
+                HttpResponseMessage response = DAO.Instance.PostTeam(teamDetails.Id);
+
+                replyMessage = await response.Content.ReadAsStringAsync();
+
                 setupMessage = true;
                 lastWasPoll = false;
             }
