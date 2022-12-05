@@ -126,7 +126,7 @@ namespace MyTeamsApp2
                             {
                                 PollTitle = customPollProperty.Question,
                                 PollQuestion = customPollProperty.Question,
-                                AnswersList = new List<string> { quote.author, quote.author, quote.author }
+                                AnswersList = customPollProperty.getOptionsAsList()
                             }
                         );
                         await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);

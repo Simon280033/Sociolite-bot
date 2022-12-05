@@ -7,34 +7,34 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace Properties
 {
-    [Table("Custom_Poll")]
     public partial class CustomPollProperty
     {
-
-        [Key]
-        [Column("id")]
         public int Id { get; set; }
 
-        [ForeignKey("SocioliteTeamProperty")]
         public int TeamId { get; set; }
 
-        [ForeignKey("UserProperty")]
         public string CreatedBy { get; set; }
 
-
-        [Required]
         public string? Question { get; set; }
-
-        [Required]
         public string? PollOptions { get; set; }
 
-        [Required]
         public DateTime CreatedAt { get; set; }
 
+        public List<string>  getOptionsAsList()
+        {
+            List<string> options = new List<string>();
 
+            if (PollOptions != null)
+            {
+                options = JsonConvert.DeserializeObject<List<string>>(PollOptions);
+            }
+
+            return options;
+        }
 
 
     }
