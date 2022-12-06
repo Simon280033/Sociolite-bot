@@ -19,6 +19,7 @@ using MyTeamsApp2.Data;
 using REST.Model.ExchangeClasses;
 using System.Collections.Generic;
 using Properties;
+using System.Threading;
 
 namespace MyTeamsApp2
 {
@@ -54,103 +55,134 @@ namespace MyTeamsApp2
             // Below runs it every 30 seconds (for development)
             // [TimerTrigger("*/30 * * * * *")]
 
-            // Make REST GET request for recurrance string for team
-            // We use this format: 00000000000 -> First 7 are bools, to say if it should run on this day, last is time
-            // Example: 10101001230 -> Runs every monday/wednesday/friday at 12:30
+            // Below: once every hour
+            //0 0 */1 * * *
 
             ActivityRequestObject data = await DAO.Instance.TeamAndActivityByChannelId("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // MAKE THIS READ FROM CONTEXT.JSON
 
-            CustomPollProperty customPollProperty = null;
-            CustomDiscussionProperty customDiscussionProperty = null;
-
-            if (data.Type.Equals("poll"))
+            if (data != null)
             {
-                customPollProperty = JsonConvert.DeserializeObject<CustomPollProperty>(data.Content);
-            }
-            else
-            {
-                customDiscussionProperty = JsonConvert.DeserializeObject<CustomDiscussionProperty>(data.Content);
-            }
-
-            //string timeToRun = "10101001230"; // This will be fetched from API
-            string timeToRun = "always"; // For development purposes
-
-            bool lastActivityWasPoll = true; // This should be fetched from API
-
-            bool isDiscussion = true; // This should be retrieved from the object received from API. If false, it is a poll
-
-            // If it is time for the event to occur
-            if (recurranceStringEvaluator.RunNow(timeToRun) && !data.IsActive) // REMOVE ! FROM LAST PART
-            {
-                Quote quote = await DAO.Instance.GetQuoteAsync("https://api.quotable.io/random");
-
-                _log.LogInformation($"NotifyTimerTrigger is triggered at {DateTime.Now}.");
-
-                // If the last activity was a poll, we post the results of this first
-                if (lastActivityWasPoll)
+                _log.LogInformation($"Data type is {data.Type}.");
+                if (data.IsActive)
                 {
-                    var adaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollResults.json");
-                    var cardTemplate = await File.ReadAllTextAsync(adaptiveCardFilePath, cancellationToken);
+                    CustomPollProperty customPollProperty = null;
+                    CustomDiscussionProperty customDiscussionProperty = null;
 
-                    var installations = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
-                    foreach (var installation in installations)
+                    if (data.Type.Equals("poll"))
                     {
-                        // Build and send adaptive card
-                        var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
-                        (
-                            new PollResultModel
-                            {
-                                PollTitle = "POLL RESULT TEST",
-                                PollQuestion = "POLL RESULT QUESTION",
-                                AnswersList = new List<Tuple<int, string>> { new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(2, "test") },
-                                PossibleAnswersList = new List<string>() { "Hej", "Med", "Dig"}
-                            }
-                        );
-                        await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+                        customPollProperty = JsonConvert.DeserializeObject<CustomPollProperty>(data.Content);
                     }
+                    else
+                    {
+                        customDiscussionProperty = JsonConvert.DeserializeObject<CustomDiscussionProperty>(data.Content);
+                    }
+
+                    //string timeToRun = data.RecurranceString;
+                    string timeToRun = "always"; // For development purposes
+
+                    bool lastActivityWasPoll = false;
+
+                    HttpResponseMessage response = await DAO.Instance.GetLastActivityType("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // READ FROM JSON
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string type = await response.Content.ReadAsStringAsync();
+                        lastActivityWasPoll = type.Equals("poll");
+                    }
+
+                    // If it is time for the event to occur
+                    if (recurranceStringEvaluator.RunNow(timeToRun) && data.IsActive)
+                    {
+                        _log.LogInformation($"NotifyTimerTrigger is triggered at {DateTime.Now}.");
+
+                        // If the last activity was a poll, we post the results of this first
+                        _log.LogInformation($"Last activity was poll: {lastActivityWasPoll}.");
+                        if (lastActivityWasPoll)
+                        {
+                            await ShowPollResults(context, cancellationToken);
+                        }
+
+                        // If we want to display a poll
+                        if (data.Type.Equals("poll"))
+                        {
+                            await DisplayPoll(context, cancellationToken, customPollProperty);
+                        }
+                        else if (data.Type.Equals("discussion")) // If it is a discussion
+                        {
+                            await DisplayDiscussion(context, cancellationToken, customDiscussionProperty);
+                        }
+                    }
+                } else
+                {
+                    _log.LogInformation($"Team is NOT active. Skipping event.");
                 }
+            } else
+            {
+                _log.LogInformation($"Data is null!");
+            }
+        }
 
-                // If we want to display a poll
-                if (data.Type.Equals("poll"))
-                {
-                    var pollAdaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollDefault.json");
-                    var cardTemplate = await File.ReadAllTextAsync(pollAdaptiveCardFilePath, cancellationToken);
+        public async Task ShowPollResults(ExecutionContext context, CancellationToken cancellationToken)
+        {
+            var adaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollResults.json");
+            var cardTemplate = await File.ReadAllTextAsync(adaptiveCardFilePath, cancellationToken);
 
-                    var installations2 = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
-                    foreach (var installation in installations2)
+            var installations = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
+            foreach (var installation in installations)
+            {
+                // Build and send adaptive card
+                var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
+                (
+                    new PollResultModel
                     {
-                        // Build and send adaptive card
-                        var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
-                        (
-                            new PollDefaultModel
-                            {
-                                PollTitle = customPollProperty.Question,
-                                PollQuestion = customPollProperty.Question,
-                                AnswersList = customPollProperty.getOptionsAsList()
-                            }
-                        );
-                        await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+                        PollTitle = "POLL RESULT TEST",
+                        PollQuestion = "POLL RESULT QUESTION",
+                        AnswersList = new List<Tuple<int, string>> { new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(2, "test") },
+                        PossibleAnswersList = new List<string>() { "Hej", "Med", "Dig" }
                     }
-                } 
-                else // If it is a discussion
-                {
-                    var discussionAdaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "DiscussionDefault.json");
-                    var cardTemplate = await File.ReadAllTextAsync(discussionAdaptiveCardFilePath, cancellationToken);
+                );
+                await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+            }
+        }
 
-                    var installations = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
-                    foreach (var installation in installations)
+        public async Task DisplayPoll(ExecutionContext context, CancellationToken cancellationToken, CustomPollProperty customPollProperty)
+        {
+            var pollAdaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollDefault.json");
+            var cardTemplate = await File.ReadAllTextAsync(pollAdaptiveCardFilePath, cancellationToken);
+
+            var installations2 = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
+            foreach (var installation in installations2)
+            {
+                // Build and send adaptive card
+                var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
+                (
+                    new PollDefaultModel
                     {
-                        // Build and send adaptive card
-                        var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
-                        (
-                            new DiscussionDefaultModel
-                            {
-                                DiscussionTopic = customDiscussionProperty.TopicText
-                            }
-                        );
-                        await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+                        PollTitle = customPollProperty.Question,
+                        PollQuestion = customPollProperty.Question,
+                        AnswersList = customPollProperty.getOptionsAsList()
                     }
-                }
+                );
+                await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
+            }
+        }
+
+        public async Task DisplayDiscussion(ExecutionContext context, CancellationToken cancellationToken, CustomDiscussionProperty customDiscussionProperty)
+        {
+            var discussionAdaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "DiscussionDefault.json");
+            var cardTemplate = await File.ReadAllTextAsync(discussionAdaptiveCardFilePath, cancellationToken);
+
+            var installations = await _conversation.Notification.GetInstallationsAsync(cancellationToken);
+            foreach (var installation in installations)
+            {
+                // Build and send adaptive card
+                var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
+                (
+                    new DiscussionDefaultModel
+                    {
+                        DiscussionTopic = customDiscussionProperty.TopicText
+                    }
+                );
+                await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
             }
         }
     }
