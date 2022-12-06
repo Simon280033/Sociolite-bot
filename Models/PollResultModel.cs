@@ -91,7 +91,7 @@ namespace MyTeamsApp2.Models
                     // If nobody voted for this option
                     if (masterList[i].Count < 1)
                     {
-                        answersAsString += "No votes!";
+                        answersAsString += "No votes!\n\r";
                     } else { 
                     // We iterate over the responders for each answer
                     for (int j = 0; j < masterList[i].Count; j++)

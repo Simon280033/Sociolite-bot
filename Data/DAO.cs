@@ -34,6 +34,8 @@ namespace MyTeamsApp2.Data
 
         private readonly string GetActivePollEndPoint = "/Api/Activity/ActivePoll";
 
+        private readonly string GetLastPollResultsEndPoint = "/Api/Activity/LastPollResults";
+
         private DAO()
         {
         }
@@ -141,5 +143,11 @@ namespace MyTeamsApp2.Data
             return await client.GetAsync(GetActivePollEndPoint);
         }
 
+        public async Task<HttpResponseMessage> GetLastPollResults(string channelId)
+        {
+            using var client = GetApiClient();
+            client.DefaultRequestHeaders.Add("channelId", channelId);
+            return await client.GetAsync(GetLastPollResultsEndPoint);
+        }
     }
 }

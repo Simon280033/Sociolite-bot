@@ -47,7 +47,7 @@ namespace MyTeamsApp2
         }
 
         [FunctionName("NotifyTimerTrigger")]
-        public async Task Run([TimerTrigger("*/10 * * * * *")] TimerInfo myTimer, ExecutionContext context, CancellationToken cancellationToken)
+        public async Task Run([TimerTrigger("*/40 * * * * *")] TimerInfo myTimer, ExecutionContext context, CancellationToken cancellationToken)
         {
             // Below runs the trigger every 30 minutes on every weekday - use this to check if the time is right for team
             // [TimerTrigger("0 */30 * * * 0-6")]
@@ -98,7 +98,15 @@ namespace MyTeamsApp2
                         _log.LogInformation($"Last activity was poll: {lastActivityWasPoll}.");
                         if (lastActivityWasPoll)
                         {
-                            await ShowPollResults(context, cancellationToken);
+                            HttpResponseMessage resultsResponse = await DAO.Instance.GetLastPollResults("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // READ FROM JSON
+
+                            if (resultsResponse.IsSuccessStatusCode)
+                            {
+                                _log.LogInformation($"JSON: {await resultsResponse.Content.ReadAsStringAsync()}.");
+
+                                PollResultDisplayObject results = JsonConvert.DeserializeObject<PollResultDisplayObject>(await resultsResponse.Content.ReadAsStringAsync());
+                                await ShowPollResults(context, cancellationToken, results);
+                            }
                         }
 
                         // If we want to display a poll
@@ -121,7 +129,7 @@ namespace MyTeamsApp2
             }
         }
 
-        public async Task ShowPollResults(ExecutionContext context, CancellationToken cancellationToken)
+        public async Task ShowPollResults(ExecutionContext context, CancellationToken cancellationToken, PollResultDisplayObject results)
         {
             var adaptiveCardFilePath = Path.Combine(context.FunctionAppDirectory, "Resources", "PollResults.json");
             var cardTemplate = await File.ReadAllTextAsync(adaptiveCardFilePath, cancellationToken);
@@ -134,10 +142,10 @@ namespace MyTeamsApp2
                 (
                     new PollResultModel
                     {
-                        PollTitle = "POLL RESULT TEST",
-                        PollQuestion = "POLL RESULT QUESTION",
-                        AnswersList = new List<Tuple<int, string>> { new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(1, "test"), new Tuple<int, string>(2, "test") },
-                        PossibleAnswersList = new List<string>() { "Hej", "Med", "Dig" }
+                        PollTitle = results.PollQuestion + results.AnswersAndRespondants.Count(),
+                        PollQuestion = results.PollQuestion,
+                        AnswersList = results.AnswersAndRespondants,
+                        PossibleAnswersList = results.PossibleAnswers
                     }
                 );
                 await installation.SendAdaptiveCard(JsonConvert.DeserializeObject(cardContent), cancellationToken);
