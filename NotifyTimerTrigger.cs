@@ -36,16 +36,6 @@ namespace MyTeamsApp2
             _log = log;
         }
 
-        public class Quote
-        {
-            public string _id { get; set; }
-            public string content { get; set; }
-            public string author { get; set; }
-            public string authorSlug { get; set; }
-            public int length { get; set; }
-            public string[] tags { get; set; }
-        }
-
         [FunctionName("NotifyTimerTrigger")]
         public async Task Run([TimerTrigger("*/40 * * * * *")] TimerInfo myTimer, ExecutionContext context, CancellationToken cancellationToken)
         {
@@ -61,7 +51,7 @@ namespace MyTeamsApp2
             // Get team details
             string channelId = "";
 
-            JObject jObject = JObject.Parse(File.ReadAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json")); // Refer dynamically
+            JObject jObject = JObject.Parse(File.ReadAllText(@"context.json")); // Refer dynamically
 
             // Read channelID if already set, otherwise set (So notifytimertrigger can access it)
             if (jObject["channelId"].Value<string>().Length > 0)

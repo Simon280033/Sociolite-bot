@@ -41,7 +41,7 @@ namespace MyTeamsApp2
             // Get team details
             string channelId = "";
 
-            JObject jObject = JObject.Parse(File.ReadAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json")); // Refer dynamically
+            JObject jObject = JObject.Parse(File.ReadAllText(@"context.json")); // Refer dynamically
 
             // Read channelID if already set, otherwise set (So notifytimertrigger can access it)
             if (jObject["channelId"].Value<string>().Length > 0)
@@ -52,7 +52,7 @@ namespace MyTeamsApp2
             {
                 TeamDetails teamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, null, cancellationToken);
 
-                File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json", ("{ \"channelId\":\"") + teamDetails.Id + ("\" }"));
+                File.WriteAllText(@"context.json", ("{ \"channelId\":\"") + teamDetails.Id + ("\" }"));
 
                 channelId = teamDetails.Id;
             }

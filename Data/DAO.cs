@@ -58,7 +58,7 @@ namespace MyTeamsApp2.Data
             {
                 string baseString = "";
 
-                JObject jObject = JObject.Parse(File.ReadAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\restapistring.json")); // Refer dynamically
+                JObject jObject = JObject.Parse(File.ReadAllText(@"restapistring.json")); // Refer dynamically
 
                 baseString = jObject["base"].Value<string>();
 
