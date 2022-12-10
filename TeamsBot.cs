@@ -11,6 +11,7 @@ using Microsoft.Graph.TermStore;
 using Microsoft.TeamsFx;
 using MyTeamsApp2.Data;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Properties;
 using REST.Model.ExchangeClasses;
 using System;
@@ -20,33 +21,42 @@ using File = System.IO.File;
 
 namespace MyTeamsApp2
 {
-    /// <summary>
-    /// An empty bot handler.
-    /// You can add your customization code here to extend your bot logic if needed.
-    /// </summary>
     public class TeamsBot : IBot
     {
         public Task OnTurnAsync(ITurnContext turnContext, CancellationToken cancellationToken = default) =>
-            SetTeamId(turnContext, cancellationToken);
+            TurnLogic(turnContext, cancellationToken);
 
-        public static async Task<Task> SetTeamId(ITurnContext turnContext, CancellationToken cancellationToken = default)
+        public static async Task<Task> TurnLogic(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
             if (turnContext.Activity.Text.Length  > 0) { 
             // Reply to message to bot when vote
             await EvaluateBotMessageAsync(turnContext, cancellationToken);
             }
 
-            /*
-            TeamDetails teamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, null, cancellationToken);
-
-            File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json", ("{ \"teamId\":\"") + teamDetails.Id + ("\" }"));
-            */
-
             return Task.CompletedTask;
         }
 
         public static async Task EvaluateBotMessageAsync(ITurnContext turnContext, CancellationToken cancellationToken)
         {
+            // Get team details
+            string channelId = "";
+
+            JObject jObject = JObject.Parse(File.ReadAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json")); // Refer dynamically
+
+            // Read channelID if already set, otherwise set (So notifytimertrigger can access it)
+            if (jObject["channelId"].Value<string>().Length > 0)
+            {
+                channelId = jObject["channelId"].Value<string>();
+            }
+            else
+            {
+                TeamDetails teamDetails = await TeamsInfo.GetTeamDetailsAsync(turnContext, null, cancellationToken);
+
+                File.WriteAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json", ("{ \"channelId\":\"") + teamDetails.Id + ("\" }"));
+
+                channelId = teamDetails.Id;
+            }
+
             // Get the text of the message if a user sends a message to @bot
             var messageText = turnContext.Activity.Text;
 
@@ -59,7 +69,7 @@ namespace MyTeamsApp2
             // If last activity was NOT a poll, we reject (get from API)
             bool lastWasPoll = false;
 
-            HttpResponseMessage response = await DAO.Instance.GetLastActivityType("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // READ FROM JSON
+            HttpResponseMessage response = await DAO.Instance.GetLastActivityType(channelId);
             if (response.IsSuccessStatusCode)
             {
                 string type = await response.Content.ReadAsStringAsync();
@@ -89,7 +99,7 @@ namespace MyTeamsApp2
             {
                 int numberOfPossibleAnswers = 0;
 
-                var pollResponse = await DAO.Instance.GetActivePoll("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // READ FROM JSON
+                var pollResponse = await DAO.Instance.GetActivePoll(channelId);
                 if (pollResponse.IsSuccessStatusCode)
                 {
                     numberOfPossibleAnswers = Int32.Parse(await pollResponse.Content.ReadAsStringAsync());
@@ -104,7 +114,7 @@ namespace MyTeamsApp2
                     if (Int32.Parse(messageText) > 0 && Int32.Parse(messageText) <= numberOfPossibleAnswers)
                     {
                         // POST vote to API. If the user already has voted, tell him that his vote has been updated, if not tell him that it has been cast
-                        var voteResponse = await DAO.Instance.Vote("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2", userId, Int32.Parse(messageText)); // READ FROM JSON
+                        var voteResponse = await DAO.Instance.Vote(channelId, userId, Int32.Parse(messageText)); // READ FROM JSON
                         if (voteResponse.IsSuccessStatusCode)
                         {
                             replyMessage = "Your vote has succesfully been registered! The results will be unveiled at next Sociolite event";

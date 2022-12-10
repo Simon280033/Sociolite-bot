@@ -58,7 +58,19 @@ namespace MyTeamsApp2
             // Below: once every hour
             //0 0 */1 * * *
 
-            ActivityRequestObject data = await DAO.Instance.TeamAndActivityByChannelId("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // MAKE THIS READ FROM CONTEXT.JSON
+            // Get team details
+            string channelId = "";
+
+            JObject jObject = JObject.Parse(File.ReadAllText(@"C:\Users\simon\source\repos\MyTeamsApp2\context.json")); // Refer dynamically
+
+            // Read channelID if already set, otherwise set (So notifytimertrigger can access it)
+            if (jObject["channelId"].Value<string>().Length > 0)
+            {
+                channelId = jObject["channelId"].Value<string>();
+            }
+
+            if (channelId.Length > 0) {
+            ActivityRequestObject data = await DAO.Instance.TeamAndActivityByChannelId(channelId);
 
             if (data != null)
             {
@@ -82,7 +94,7 @@ namespace MyTeamsApp2
 
                     bool lastActivityWasPoll = false;
 
-                    HttpResponseMessage response = await DAO.Instance.GetLastActivityType("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // READ FROM JSON
+                    HttpResponseMessage response = await DAO.Instance.GetLastActivityType(channelId);
                     if (response.IsSuccessStatusCode)
                     {
                         string type = await response.Content.ReadAsStringAsync();
@@ -98,7 +110,7 @@ namespace MyTeamsApp2
                         _log.LogInformation($"Last activity was poll: {lastActivityWasPoll}.");
                         if (lastActivityWasPoll)
                         {
-                            HttpResponseMessage resultsResponse = await DAO.Instance.GetLastPollResults("19:5d175fc71c154b1dbde3b8ee066c5131@thread.tacv2"); // READ FROM JSON
+                            HttpResponseMessage resultsResponse = await DAO.Instance.GetLastPollResults(channelId);
 
                             if (resultsResponse.IsSuccessStatusCode)
                             {
@@ -127,6 +139,8 @@ namespace MyTeamsApp2
             {
                 _log.LogInformation($"Data is null!");
             }
+                _log.LogInformation($"Channel Id not set! Link bot to Sociolite team to enact activity.");
+            }
         }
 
         public async Task ShowPollResults(ExecutionContext context, CancellationToken cancellationToken, PollResultDisplayObject results)
@@ -142,7 +156,7 @@ namespace MyTeamsApp2
                 (
                     new PollResultModel
                     {
-                        PollTitle = results.PollQuestion + results.AnswersAndRespondants.Count(),
+                        PollTitle = results.PollQuestion,
                         PollQuestion = results.PollQuestion,
                         AnswersList = results.AnswersAndRespondants,
                         PossibleAnswersList = results.PossibleAnswers

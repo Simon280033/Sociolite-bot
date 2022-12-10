@@ -102,18 +102,6 @@ namespace MyTeamsApp2.Data
             }
         }
 
-        public async Task<Quote> GetQuoteAsync(string path)
-        {
-            using var client = GetApiClient();
-            Quote quote = null;
-            HttpResponseMessage response = await client.GetAsync(path);
-            if (response.IsSuccessStatusCode)
-            {
-                quote = await response.Content.ReadAsAsync<Quote>();
-            }
-            return quote;
-        }
-
         public async Task<HttpResponseMessage> GetLastActivityType(string channelId)
         {
             using var client = GetApiClient();
