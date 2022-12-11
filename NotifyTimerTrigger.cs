@@ -20,6 +20,11 @@ using REST.Model.ExchangeClasses;
 using System.Collections.Generic;
 using Properties;
 using System.Threading;
+using Microsoft.Graph;
+using File = System.IO.File;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace MyTeamsApp2
 {
@@ -48,19 +53,35 @@ namespace MyTeamsApp2
             // Below: once every hour
             //0 0 */1 * * *
 
+            CustomDiscussionProperty test = new CustomDiscussionProperty
+            {
+                Id = 0,
+                TeamId = 0,
+                CreatedBy = "test",
+                TopicText = "test",
+                CreatedAt = DateTime.Now
+            };
+
+            await DisplayDiscussion(context, cancellationToken, test);
+
             // Get team details
             string channelId = "";
 
-            JObject jObject = JObject.Parse(File.ReadAllText(@"context.json")); // Refer dynamically
 
             // Read channelID if already set, otherwise set (So notifytimertrigger can access it)
-            if (jObject["channelId"].Value<string>().Length > 0)
+            if (new FileInfo(@"context.json").Length == 0)
             {
+                _log.LogInformation($"channelId is not set!");
+            } else
+            {
+                JObject jObject = JObject.Parse(File.ReadAllText(@"context.json")); // Refer dynamically
+
                 channelId = jObject["channelId"].Value<string>();
-            }
 
             if (channelId.Length > 0) {
-            ActivityRequestObject data = await DAO.Instance.TeamAndActivityByChannelId(channelId);
+                _log.LogInformation($"channelId is {channelId}.");
+
+                ActivityRequestObject data = await DAO.Instance.TeamAndActivityByChannelId(channelId);
 
             if (data != null)
             {
@@ -131,6 +152,8 @@ namespace MyTeamsApp2
             }
                 _log.LogInformation($"Channel Id not set! Link bot to Sociolite team to enact activity.");
             }
+            }
+
         }
 
         public async Task ShowPollResults(ExecutionContext context, CancellationToken cancellationToken, PollResultDisplayObject results)

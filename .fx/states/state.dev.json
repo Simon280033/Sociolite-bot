@@ -1,0 +1,45 @@
+{
+    "solution": {
+        "provisionSucceeded": true,
+        "teamsAppTenantId": "12893fa5-4f74-449f-b552-95d941d89e94",
+        "subscriptionId": "4703a025-ef3c-4646-bf37-3760cd3e290c",
+        "subscriptionName": "Azure subscription 1",
+        "tenantId": "5f38886c-1b4e-474e-8cd3-f9871f3373d5",
+        "needCreateResourceGroup": true,
+        "resourceGroupName": "Sociolite",
+        "location": "northeurope",
+        "resourceNameSuffix": "b6b7a9"
+    },
+    "fx-resource-appstudio": {
+        "tenantId": "12893fa5-4f74-449f-b552-95d941d89e94",
+        "teamsAppId": "b1c3a510-63b1-4f9f-8eda-0e7ca192f392"
+    },
+    "fx-resource-aad-app-for-teams": {
+        "clientId": "3cca420a-4f4c-45c7-85db-684a74de8837",
+        "clientSecret": "{{fx-resource-aad-app-for-teams.clientSecret}}",
+        "objectId": "65d04e43-c1e7-4616-a608-b64152488720",
+        "oauth2PermissionScopeId": "6f71f1b9-622a-495a-bf0d-bbd6d86aa812",
+        "tenantId": "12893fa5-4f74-449f-b552-95d941d89e94",
+        "oauthHost": "https://login.microsoftonline.com",
+        "oauthAuthority": "https://login.microsoftonline.com/12893fa5-4f74-449f-b552-95d941d89e94",
+        "applicationIdUris": "api://botid-a77a0f5b-3b63-4584-b504-009fbaf1f425",
+        "botId": "a77a0f5b-3b63-4584-b504-009fbaf1f425",
+        "botEndpoint": "https://myteamsappdev90b9a9bot.azurewebsites.net"
+    },
+    "fx-resource-bot": {
+        "botId": "a77a0f5b-3b63-4584-b504-009fbaf1f425",
+        "botPassword": "{{fx-resource-bot.botPassword}}",
+        "objectId": "42ffaf02-49fb-4783-87f6-41c5d7b33d33",
+        "skuName": "B1",
+        "siteName": "myteamsappdev90b9a9bot",
+        "validDomain": "myteamsappdev90b9a9bot.azurewebsites.net",
+        "appServicePlanName": "myteamsappdev90b9a9bot",
+        "resourceId": "/subscriptions/4703a025-ef3c-4646-bf37-3760cd3e290c/resourceGroups/Sociolite/providers/Microsoft.Web/sites/myteamsappdev90b9a9bot",
+        "siteEndpoint": "https://myteamsappdev90b9a9bot.azurewebsites.net"
+    },
+    "fx-resource-identity": {
+        "identityName": "myteamsappdev90b9a9",
+        "identityResourceId": "/subscriptions/4703a025-ef3c-4646-bf37-3760cd3e290c/resourceGroups/Sociolite/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myteamsappdev90b9a9",
+        "identityClientId": "dfe3a158-bea8-4b77-ae38-01226aac3667"
+    }
+}

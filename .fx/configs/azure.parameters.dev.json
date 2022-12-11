@@ -4,7 +4,7 @@
   "parameters": {
     "provisionParameters": {
       "value": {
-        "resourceBaseName": "myteamsappdevbc5a2f",
+        "resourceBaseName": "myteamsappdev90b9a9",
         "botAadAppClientId": "{{state.fx-resource-bot.botId}}",
         "botAadAppClientSecret": "{{state.fx-resource-bot.botPassword}}",
         "m365ClientId": "{{state.fx-resource-aad-app-for-teams.clientId}}",

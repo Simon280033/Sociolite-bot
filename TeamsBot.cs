@@ -28,12 +28,17 @@ namespace MyTeamsApp2
 
         public static async Task<Task> TurnLogic(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
+            await turnContext.SendActivityAsync("roligt bro");
+
+            /*
             if (turnContext.Activity.Text.Length  > 0) { 
             // Reply to message to bot when vote
             await EvaluateBotMessageAsync(turnContext, cancellationToken);
             }
+            */
 
             return Task.CompletedTask;
+            
         }
 
         public static async Task EvaluateBotMessageAsync(ITurnContext turnContext, CancellationToken cancellationToken)
