@@ -32,7 +32,6 @@ namespace MyTeamsApp2
     {
         private readonly ConversationBot _conversation;
         private readonly ILogger<NotifyTimerTrigger> _log;
-        private static HttpClient client = new HttpClient();
         private RecurranceStringEvaluator recurranceStringEvaluator = new RecurranceStringEvaluator();
 
         public NotifyTimerTrigger(ConversationBot conversation, ILogger<NotifyTimerTrigger> log)
@@ -53,17 +52,6 @@ namespace MyTeamsApp2
             // Below: once every hour
             //0 0 */1 * * *
 
-            CustomDiscussionProperty test = new CustomDiscussionProperty
-            {
-                Id = 0,
-                TeamId = 0,
-                CreatedBy = "test",
-                TopicText = "test",
-                CreatedAt = DateTime.Now
-            };
-
-            await DisplayDiscussion(context, cancellationToken, test);
-
             // Get team details
             string channelId = "";
 
@@ -77,13 +65,12 @@ namespace MyTeamsApp2
                 JObject jObject = JObject.Parse(File.ReadAllText(@"context.json")); // Refer dynamically
 
                 channelId = jObject["channelId"].Value<string>();
-
             if (channelId.Length > 0) {
                 _log.LogInformation($"channelId is {channelId}.");
 
                 ActivityRequestObject data = await DAO.Instance.TeamAndActivityByChannelId(channelId);
 
-            if (data != null)
+            if (data != null && !data.Type.Equals("none"))
             {
                 _log.LogInformation($"Data type is {data.Type}.");
                 if (data.IsActive)
@@ -100,8 +87,8 @@ namespace MyTeamsApp2
                         customDiscussionProperty = JsonConvert.DeserializeObject<CustomDiscussionProperty>(data.Content);
                     }
 
-                    //string timeToRun = data.RecurranceString;
-                    string timeToRun = "always"; // For development purposes
+                    string timeToRun = data.RecurranceString;
+                    //string timeToRun = "always"; // For development purposes
 
                     bool lastActivityWasPoll = false;
 
