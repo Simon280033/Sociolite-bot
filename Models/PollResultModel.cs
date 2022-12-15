@@ -62,7 +62,8 @@ namespace MyTeamsApp2.Models
             return defaultUrlRoot + labelsUrlPart + datasetsUrlPart;
         }
 
-        public string Answers { 
+        public string Answers
+        {
             get
             {
                 string answersAsString = "";
@@ -92,17 +93,19 @@ namespace MyTeamsApp2.Models
                     if (masterList[i].Count < 1)
                     {
                         answersAsString += "No votes!\n\r";
-                    } else { 
-                    // We iterate over the responders for each answer
-                    for (int j = 0; j < masterList[i].Count; j++)
-                    {
-                        answersAsString += masterList[i][j];
-                        if (j != masterList[i].Count - 1)
-                        {
-                            answersAsString += ", ";
-                        }
                     }
-                    answersAsString += "\n\r";
+                    else
+                    {
+                        // We iterate over the responders for each answer
+                        for (int j = 0; j < masterList[i].Count; j++)
+                        {
+                            answersAsString += masterList[i][j];
+                            if (j != masterList[i].Count - 1)
+                            {
+                                answersAsString += ", ";
+                            }
+                        }
+                        answersAsString += "\n\r";
                     }
                 }
                 return answersAsString;

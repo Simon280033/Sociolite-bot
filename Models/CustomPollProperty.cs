@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
 namespace Properties
 {
@@ -24,7 +15,7 @@ namespace Properties
 
         public DateTime CreatedAt { get; set; }
 
-        public List<string>  getOptionsAsList()
+        public List<string> getOptionsAsList()
         {
             List<string> options = new List<string>();
 

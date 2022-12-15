@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MyTeamsApp2
+﻿namespace MyTeamsApp2
 {
     internal class RecurranceStringEvaluator
     {
@@ -21,12 +15,6 @@ namespace MyTeamsApp2
 
         public bool RunNow(string reccuranceString)
         {
-            // For development purposes
-            if (reccuranceString.Equals("always"))
-            {
-                return true;
-            }
-
             DateTime now = DateTime.Now;
 
             string dayToday = now.DayOfWeek.ToString();
@@ -34,7 +22,7 @@ namespace MyTeamsApp2
             string minute = now.Minute.ToString();
 
             // 1 if true, 0 if false
-            int runToday = (int) reccuranceString[Days[dayToday]];
+            int runToday = (int)reccuranceString[Days[dayToday]];
             string runAtHour = getHoursFromString(reccuranceString);
             string runAtMinute = getMinutesFromString(reccuranceString);
 
@@ -54,7 +42,7 @@ namespace MyTeamsApp2
 
         private string getHoursFromString(string reccuranceString)
         {
-            string time = reccuranceString.Remove(0,7);
+            string time = reccuranceString.Remove(0, 7);
             return time.Substring(0, time.Length - 2);
         }
         private string getMinutesFromString(string reccuranceString)

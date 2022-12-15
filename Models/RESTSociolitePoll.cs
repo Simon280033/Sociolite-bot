@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
-
-namespace MyTeamsApp2.Models
+﻿namespace MyTeamsApp2.Models
 {
     public partial class RESTSociolitePoll
     {

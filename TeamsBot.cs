@@ -1,25 +1,11 @@
 using AdaptiveCards.Templating;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Teams;
-using Microsoft.Bot.Connector;
-using Microsoft.Bot.Connector.Authentication;
-using Microsoft.Bot.Schema;
 using Microsoft.Bot.Schema.Teams;
-using Microsoft.Graph;
-using Microsoft.Graph.TermStore;
-using Microsoft.TeamsFx;
 using MyTeamsApp2.Data;
 using MyTeamsApp2.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Polly;
-using Properties;
-using REST.Model.ExchangeClasses;
-using System;
-using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using File = System.IO.File;
 
@@ -32,13 +18,15 @@ namespace MyTeamsApp2
 
         public static async Task<Task> TurnLogic(ITurnContext turnContext, CancellationToken cancellationToken = default)
         {
-            if (turnContext.Activity.Text.Length  > 0) { 
-            // Reply to message to bot when vote
-            await HandleMessage(turnContext, cancellationToken);
+            // This method is called whenever a user tags the bot with a message in chat
+
+            // Check if message is empty
+            if (turnContext.Activity.Text.Length > 0)
+            {
+                await HandleMessage(turnContext, cancellationToken);
             }
 
             return Task.CompletedTask;
-            
         }
 
         public static async Task<string> EvaluateBotMessageAsync(ITurnContext turnContext, CancellationToken cancellationToken)
@@ -48,22 +36,28 @@ namespace MyTeamsApp2
 
             messageText = messageText.Split(new string[] { "</at>" }, StringSplitOptions.None).Last();
 
+            // Run method based on message type
+
+            // If setup-message
             if (Regex.Replace(messageText.ToLower(), @"\s+", "").Equals("hello"))
             {
                 return "setup";
             }
 
+            // If vote-message
             if (int.TryParse(messageText, out _))
             {
                 return "vote";
 
             }
 
+            // If result request-message
             if (Regex.Replace(messageText.ToLower(), @"\s+", "").Equals("poll"))
             {
                 return "poll";
             }
 
+            // If message type could not be inferred
             return "error";
         }
 
@@ -75,7 +69,7 @@ namespace MyTeamsApp2
             // Read channelID if already set, otherwise set (So notifytimertrigger can access it)
             if (new FileInfo(@"context.json").Length != 0)
             {
-                JObject jObject = JObject.Parse(File.ReadAllText(@"context.json")); // Refer dynamically
+                JObject jObject = JObject.Parse(File.ReadAllText(@"context.json"));
 
                 channelId = jObject["channelId"].Value<string>();
             }
@@ -110,18 +104,18 @@ namespace MyTeamsApp2
 
             // We evaluate if the response makes sense
             // First we check if it can be turned into an integer
-
             if (int.TryParse(messageText, out _))
             {
                 // Then we check if the number is within the range allowed
                 if (Int32.Parse(messageText) > 0 && Int32.Parse(messageText) <= numberOfPossibleAnswers)
                 {
                     // POST vote to API. If the user already has voted, tell him that his vote has been updated, if not tell him that it has been cast
-                    var voteResponse = await DAO.Instance.Vote(channelId, userId, Int32.Parse(messageText)); // READ FROM JSON
+                    var voteResponse = await DAO.Instance.Vote(channelId, userId, Int32.Parse(messageText));
                     if (voteResponse.IsSuccessStatusCode)
                     {
                         return "Your vote has succesfully been registered! The results will be unveiled at next Sociolite event";
-                    } else
+                    }
+                    else
                     {
                         return "Failed to register vote. Format was correct, please try again later.";
                     }
@@ -142,19 +136,19 @@ namespace MyTeamsApp2
             var adaptiveCardFilePath = Path.Combine("Resources", "PollResults.json");
             var cardTemplate = await File.ReadAllTextAsync(adaptiveCardFilePath, cancellationToken);
 
-                // Build and send adaptive card
-                var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
-                (
-                    new PollResultModel
-                    {
-                        PollTitle = results.PollQuestion,
-                        PollQuestion = results.PollQuestion,
-                        AnswersList = results.AnswersAndRespondants,
-                        PossibleAnswersList = results.PossibleAnswers
-                    }
-                );
+            // Build and send adaptive card
+            var cardContent = new AdaptiveCardTemplate(cardTemplate).Expand
+            (
+                new PollResultModel
+                {
+                    PollTitle = results.PollQuestion,
+                    PollQuestion = results.PollQuestion,
+                    AnswersList = results.AnswersAndRespondants,
+                    PossibleAnswersList = results.PossibleAnswers
+                }
+            );
 
-            var reply = MessageFactory.Attachment(new Microsoft.Bot.Schema.Attachment { Content = cardContent }); //pass adaptive card to content
+            var reply = MessageFactory.Attachment(new Microsoft.Bot.Schema.Attachment { Content = cardContent });
             var result = await context.SendActivityAsync(reply, cancellationToken);
         }
 
@@ -192,12 +186,13 @@ namespace MyTeamsApp2
                     // If last activity was NOT a poll, we reject (get from API)
                     bool lastWasPoll = false;
 
-                HttpResponseMessage response = await DAO.Instance.GetLastActivityType(channelId);
-                if (response.IsSuccessStatusCode)
-                {
-                    string type = await response.Content.ReadAsStringAsync();
-                    lastWasPoll = type.Equals("poll");
-                } else
+                    HttpResponseMessage response = await DAO.Instance.GetLastActivityType(channelId);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string type = await response.Content.ReadAsStringAsync();
+                        lastWasPoll = type.Equals("poll");
+                    }
+                    else
                     {
                         throw new Exception();
                     }
@@ -205,12 +200,14 @@ namespace MyTeamsApp2
                     if (!lastWasPoll)
                     {
                         replyMessage = "No votes can be cast at the moment, as the current activity is not a poll.";
-                    } else
+                    }
+                    else
                     {
                         replyMessage = await VoteAction(turnContext, cancellationToken, messageText, userId, channelId);
                     }
 
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
                     replyMessage = e.Message;
                 }

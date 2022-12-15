@@ -5,7 +5,6 @@ using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.TeamsFx.Conversation;
-using MyTeamsApp2.Data;
 
 [assembly: FunctionsStartup(typeof(MyTeamsApp2.Startup))]
 

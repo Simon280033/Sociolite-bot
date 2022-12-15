@@ -1,16 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Bot.Connector.Authentication;
-using Microsoft.Graph;
-using MyTeamsApp2.Models;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using REST.Model.ExchangeClasses;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using static MyTeamsApp2.NotifyTimerTrigger;
 using File = System.IO.File;
 
 namespace MyTeamsApp2.Data
@@ -38,6 +29,7 @@ namespace MyTeamsApp2.Data
 
         private DAO()
         {
+            // Implemented as singleton, so we need empty constructor
         }
 
         public static DAO Instance
@@ -54,11 +46,12 @@ namespace MyTeamsApp2.Data
 
         private HttpClient GetApiClient()
         {
+            // Set address if first time, return if not
             if (restAddress == null)
             {
                 string baseString = "";
 
-                JObject jObject = JObject.Parse(File.ReadAllText(@"restapistring.json")); // Refer dynamically
+                JObject jObject = JObject.Parse(File.ReadAllText(@"restapistring.json"));
 
                 baseString = jObject["base"].Value<string>();
 
@@ -97,7 +90,6 @@ namespace MyTeamsApp2.Data
             }
             else
             {
-                throw new Exception();
                 return null;
             }
         }
